@@ -1,26 +1,21 @@
 import axios from "axios";
-import { useEffect, useState,useRef  } from "react"
+import { useEffect, useState, useRef } from "react";
+import { useLocation, useNavigate } from 'react-router-dom';
 
 
 export default function Chat() {
 
+    const location = useLocation();
+    const navigate = useNavigate();
+
     const [names, setNames] = useState([]);
-    const [recivemsg,setReceivedMsg] = useState("");
+    const [recivemsg, setReceivedMsg] = useState("");
     const [message, setMessage] = useState("");
+    const [username, setusername] = useState("");
+
     const socketRef = useRef<WebSocket | null>(null);
 
-    useEffect(() => {
 
-        socketRef.current = new WebSocket('ws://localhost:3000');
-        socketRef.current.onmessage = (event) => {
-            console.log('Message from server:', event.data);
-            setReceivedMsg(event.data); 
-        };
-
-        return () => {
-            socketRef.current?.close();
-        };
-    }, []);
 
 
     useEffect(() => {
@@ -29,21 +24,62 @@ export default function Chat() {
             try {
                 const response = await axios.get('http://localhost:3000/api/names');
 
-                console.log(response.data); 
+                console.log(response.data);
                 setNames(response.data.names);
             } catch (error) {
-                console.error('Error fetching names:', error); 
+                console.error('Error fetching names:', error);
             }
         };
 
-        fetchNames(); 
+
+        const passValue = location.state?.name;
+
+        if (!passValue) {
+            navigate("/");
+        } else {
+            setusername(passValue);
+            console.log(passValue);
+
+        }
+        fetchNames();
     }, []);
+
+
+    useEffect(() => {
+
+        socketRef.current = new WebSocket('ws://localhost:3000');
+
+
+        socketRef.current.onopen = () => {
+
+            console.log("object.....")
+            socketRef.current?.send(JSON.stringify({
+                activityType: 'assignName',
+                name: location.state?.name,
+            }));
+
+        };
+
+
+        socketRef.current.onmessage = (event) => {
+            console.log('Message from server:', event.data);
+            setReceivedMsg(event.data);
+        };
+
+        return () => {
+            socketRef.current?.close();
+        };
+    }, []);
+
 
 
     const sendMessage = () => {
         if (message.trim() !== "") {
-            socketRef.current?.send(message); 
-            setMessage("");
+            socketRef.current?.send(JSON.stringify({
+                activityType: 'sendMessage',
+                message: message,
+            }));
+            setMessage('');
         }
     };
 
@@ -83,7 +119,7 @@ export default function Chat() {
 
 
                 <label htmlFor="message" className=" mt-4 block mb-2 text-sm font-medium ">Send Message</label>
-                <textarea id="message" rows={4} className="block p-2.5 w-full border border-gray-300" placeholder="Write your thoughts here..." value={message}  onChange={(e) => setMessage(e.target.value)}></textarea>
+                <textarea id="message" rows={4} className="block p-2.5 w-full border border-gray-300" placeholder="Write your thoughts here..." value={message} onChange={(e) => setMessage(e.target.value)}></textarea>
 
                 <button className="mt-4 rounded-md bg-slate-800 py-2 px-4 border border-transparent text-center text-sm text-white transition-all shadow-md hover:shadow-lg focus:bg-slate-700 focus:shadow-none active:bg-slate-700 hover:bg-slate-700 active:shadow-none disabled:pointer-events-none disabled:opacity-50 disabled:shadow-none ml-2" type="button" onClick={sendMessage}>
                     Send

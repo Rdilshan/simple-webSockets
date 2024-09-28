@@ -21,20 +21,34 @@ wss.on("connection", (ws) => {
   const clientId = uuidv4();
   console.log(`New WebSocket client connected with ID: ${clientId}`);
 
-  clients.push({ id: clientId, socket: ws });
 
   ws.on("message", (message) => {
-    console.log("Received:", message);
-    
-    clients.forEach((client) => {
+    let parsedMessage;
 
-      if ((client.id != clientId)) {
-        if (client.socket.readyState === WebSocket.OPEN) {
-          client.socket.send(`${message}`);
+    try {
+      parsedMessage = JSON.parse(message);
+    } catch (error) {
+      console.error("Invalid JSON:", message);
+      return;
+    }
+console.log(parsedMessage)
+    if (parsedMessage.activityType === "assignName") {
+
+      const userName = parsedMessage.name;
+      clients.push({ id: clientId, socket: ws, name: userName });
+      console.log(`Client ${clientId} identified as ${userName}`);
+    }
+
+    if (parsedMessage.activityType === "sendMessage") {
+
+      clients.forEach((client) => {
+        if (client.id != clientId) {
+          if (client.socket.readyState === WebSocket.OPEN) {
+            client.socket.send(`${parsedMessage.message}`);
+          }
         }
-      }
-
-    });
+      });
+    }
   });
 
   ws.on("close", () => {

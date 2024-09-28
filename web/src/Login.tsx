@@ -15,7 +15,7 @@ export default function Login() {
                 name: name,
             });
             console.log('Response:', response.data);
-            navigate('/chat');  
+            navigate('/chat', { state: { name: name } }); 
         } catch (error) {
 
             console.error('Error:', error);
