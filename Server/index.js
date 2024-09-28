@@ -4,15 +4,24 @@ app.use(express.json());
 
 const http = require('http'); 
 const WebSocket = require('ws');
+const { v4: uuidv4 } = require('uuid'); 
 
 
 const server = http.createServer(app);
 
 const wss = new WebSocket.Server({ server});
+const clientIds = [];
 
 wss.on('connection', (ws) => {
-    console.log('New client connected');
+    const clientId = uuidv4();
+    console.log(`New WebSocket client connected with ID: ${clientId}`);
 
+    if (clientIds.includes(clientId)) {
+
+    }else{
+        clientIds.push(clientId);
+    }
+    
     ws.on('message', (message) => {
         console.log('Received:', message);
      
