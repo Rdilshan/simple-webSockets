@@ -12,6 +12,8 @@ export default function Chat() {
     const [recivemsg, setReceivedMsg] = useState("");
     const [message, setMessage] = useState("");
     const [username, setusername] = useState("");
+    const [selecet, setselecet] = useState("");
+
 
     const socketRef = useRef<WebSocket | null>(null);
 
@@ -52,7 +54,7 @@ export default function Chat() {
 
         socketRef.current.onopen = () => {
 
-            console.log("object.....")
+            // console.log("object.....")
             socketRef.current?.send(JSON.stringify({
                 activityType: 'assignName',
                 name: location.state?.name,
@@ -63,7 +65,7 @@ export default function Chat() {
 
         socketRef.current.onmessage = (event) => {
             const data = JSON.parse(event.data);
-            console.log('Message from server:', data);
+            // console.log('Message from server:', data);
 
             switch (data.activityType) {
                 case 'assignId':
@@ -88,11 +90,22 @@ export default function Chat() {
 
     const sendMessage = () => {
         if (message.trim() !== "") {
-            socketRef.current?.send(JSON.stringify({
-                activityType: 'sendMessage',
-                message: message,
-            }));
-            setMessage('');
+            console.log(selecet)
+
+            if(selecet === "All"){
+                socketRef.current?.send(JSON.stringify({
+                    activityType: 'sendMessage',
+                    message: message,
+                }));
+                setMessage('');
+            }else{
+                socketRef.current?.send(JSON.stringify({
+                    activityType: 'sendMessageToUser',
+                    targetName: selecet, 
+                    message: message,
+                }));
+            }
+            
         }
     };
 
@@ -104,7 +117,9 @@ export default function Chat() {
                 <div className="w-full max-w-sm min-w-[200px]">
                     <div className="relative">
                         <select
-                            className="w-full bg-transparent placeholder:text-slate-400 text-slate-700 text-sm border border-slate-200 rounded pl-3 pr-8 py-2 transition duration-300 ease focus:outline-none focus:border-slate-400 hover:border-slate-400 shadow-sm focus:shadow-md appearance-none cursor-pointer">
+                            className="w-full bg-transparent placeholder:text-slate-400 text-slate-700 text-sm border border-slate-200 rounded pl-3 pr-8 py-2 transition duration-300 ease focus:outline-none focus:border-slate-400 hover:border-slate-400 shadow-sm focus:shadow-md appearance-none cursor-pointer"
+                            onChange={(e) => setselecet(e.target.value)}
+                            >
                             <option value="All">All</option>
 
                             {Array.isArray(names) ? ( // Check if names is an array before mapping

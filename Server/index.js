@@ -31,7 +31,7 @@ wss.on("connection", (ws) => {
       return;
     }
     console.log(parsedMessage);
-    
+
     if (parsedMessage.activityType === "assignName") {
       const userName = parsedMessage.name;
 
@@ -68,6 +68,27 @@ wss.on("connection", (ws) => {
         }
       });
     }
+
+    if (parsedMessage.activityType === "sendMessageToUser") {
+      const targetUserName = parsedMessage.targetName; // The user to send the message to
+      const userMessage = parsedMessage.message;
+
+      const targetClient = clients.find(client => client.id === targetUserName);
+
+    if (targetClient && targetClient.socket.readyState === WebSocket.OPEN) {
+
+        targetClient.socket.send(
+          JSON.stringify({
+            activityType: "sendMessage",
+            message: `${userMessage}`,
+          })
+        );
+        console.log(`Message sent to client ${targetUserName}`);
+    } else {
+        console.log(`Client with ID ${targetUserName} not found or not connected`);
+    }
+
+    }
   });
 
   ws.on("close", () => {
@@ -84,7 +105,6 @@ wss.on("connection", (ws) => {
       }
     });
 
-    
     console.log("Client disconnected");
   });
 });
