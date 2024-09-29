@@ -71,6 +71,20 @@ wss.on("connection", (ws) => {
   });
 
   ws.on("close", () => {
+    clients = clients.filter(
+      (client) => client.socket.readyState === WebSocket.OPEN
+    );
+
+    clients.forEach((client) => {
+      if (client.socket.readyState === WebSocket.OPEN) {
+        const clientsData = clients.map(({ id, name }) => ({ id, name }));
+        client.socket.send(
+          JSON.stringify({ activityType: "assignId", clients: clientsData })
+        );
+      }
+    });
+
+    
     console.log("Client disconnected");
   });
 });
