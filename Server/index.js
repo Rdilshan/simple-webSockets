@@ -15,12 +15,11 @@ const { v4: uuidv4 } = require("uuid");
 const server = http.createServer(app);
 
 const wss = new WebSocket.Server({ server });
-const clients = [];
+let clients = [];
 
 wss.on("connection", (ws) => {
   const clientId = uuidv4();
   console.log(`New WebSocket client connected with ID: ${clientId}`);
-
 
   ws.on("message", (message) => {
     let parsedMessage;
@@ -31,20 +30,40 @@ wss.on("connection", (ws) => {
       console.error("Invalid JSON:", message);
       return;
     }
-console.log(parsedMessage)
+    console.log(parsedMessage);
+    
     if (parsedMessage.activityType === "assignName") {
-
       const userName = parsedMessage.name;
+
       clients.push({ id: clientId, socket: ws, name: userName });
+
+      clients = clients.filter(
+        (client) => client.socket.readyState === WebSocket.OPEN
+      );
+
       console.log(`Client ${clientId} identified as ${userName}`);
+
+      clients.forEach((client) => {
+        if (client.socket.readyState === WebSocket.OPEN) {
+          const clientsData = clients.map(({ id, name }) => ({ id, name }));
+          client.socket.send(
+            JSON.stringify({ activityType: "assignId", clients: clientsData })
+          );
+        }
+      });
     }
 
     if (parsedMessage.activityType === "sendMessage") {
-
       clients.forEach((client) => {
         if (client.id != clientId) {
           if (client.socket.readyState === WebSocket.OPEN) {
-            client.socket.send(`${parsedMessage.message}`);
+            // client.socket.send(`${parsedMessage.message}`);
+            client.socket.send(
+              JSON.stringify({
+                activityType: "sendMessage",
+                message: `${parsedMessage.message}`,
+              })
+            );
           }
         }
       });

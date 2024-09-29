@@ -8,7 +8,7 @@ export default function Chat() {
     const location = useLocation();
     const navigate = useNavigate();
 
-    const [names, setNames] = useState([]);
+    const [names, setNames] = useState([{id:"",name:""}]);
     const [recivemsg, setReceivedMsg] = useState("");
     const [message, setMessage] = useState("");
     const [username, setusername] = useState("");
@@ -20,16 +20,16 @@ export default function Chat() {
 
     useEffect(() => {
 
-        const fetchNames = async () => {
-            try {
-                const response = await axios.get('http://localhost:3000/api/names');
+        // const fetchNames = async () => {
+        //     try {
+        //         const response = await axios.get('http://localhost:3000/api/names');
 
-                console.log(response.data);
-                setNames(response.data.names);
-            } catch (error) {
-                console.error('Error fetching names:', error);
-            }
-        };
+        //         console.log(response.data);
+        //         setNames(response.data.names);
+        //     } catch (error) {
+        //         console.error('Error fetching names:', error);
+        //     }
+        // };
 
 
         const passValue = location.state?.name;
@@ -41,7 +41,7 @@ export default function Chat() {
             console.log(passValue);
 
         }
-        fetchNames();
+        // fetchNames();
     }, []);
 
 
@@ -62,8 +62,21 @@ export default function Chat() {
 
 
         socketRef.current.onmessage = (event) => {
-            console.log('Message from server:', event.data);
-            setReceivedMsg(event.data);
+            const data = JSON.parse(event.data);
+            console.log('Message from server:', data);
+
+            switch (data.activityType) {
+                case 'assignId':
+                    setNames(data.clients);
+                    console.log('Assigned clientId:', data.clients);
+                    break;
+
+                case 'sendMessage':
+                    setReceivedMsg(data.message); // Display incoming messages
+                    break;
+            }
+            // console.log('Message from server:', event.data);
+            // setReceivedMsg(event.data);
         };
 
         return () => {
@@ -96,7 +109,7 @@ export default function Chat() {
 
                             {Array.isArray(names) ? ( // Check if names is an array before mapping
                                 names.map((name, index) => (
-                                    <option key={index} value={name}>{name}</option>
+                                    <option key={index} value={name.id}>{name.name}</option>
                                 ))
                             ) : (
                                 <option>No names found</option> // Fallback if names is not an array
